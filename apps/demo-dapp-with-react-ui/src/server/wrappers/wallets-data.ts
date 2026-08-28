@@ -14,6 +14,7 @@ import {
 } from '@ton/ton';
 import { Buffer } from 'buffer';
 import { WalletContractV4R1 } from './wallet-contract-v4-r1';
+import { WalletContractTg } from './wallet-contract-tg';
 
 const knownWallets = [
     { contract: WalletContractV1R1, loadData: loadWalletV1Data },
@@ -26,7 +27,8 @@ const knownWallets = [
     { contract: WalletContractV4R1, loadData: loadWalletV4Data },
     { contract: WalletContractV4R2, loadData: loadWalletV4Data },
     { contract: WalletContractV5Beta, loadData: loadWalletV5BetaData },
-    { contract: WalletContractV5R1, loadData: loadWalletV5Data }
+    { contract: WalletContractV5R1, loadData: loadWalletV5Data },
+    { contract: WalletContractTg, loadData: loadWalletTgData }
 ].map(({ contract, loadData }) => ({
     contract: contract,
     loadData: loadData,
@@ -76,6 +78,16 @@ function loadWalletV5Data(cs: Slice) {
     const publicKey = cs.loadBuffer(32);
     const plugins = cs.loadMaybeRef();
     return { isSignatureAuthAllowed, seqno, publicKey, walletId, plugins };
+}
+
+function loadWalletTgData(cs: Slice) {
+    // A future WalletTg revision may append fields after publicKey, so the
+    // remainder of the cell is intentionally left unread.
+    const storageRevision = cs.loadUint(8);
+    const seqno = cs.loadUint(32);
+    const walletId = cs.loadUint(32);
+    const publicKey = cs.loadBuffer(32);
+    return { storageRevision, seqno, walletId, publicKey };
 }
 
 export function tryParsePublicKey(stateInit: StateInit): Buffer | null {
